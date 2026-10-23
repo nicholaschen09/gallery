@@ -122,4 +122,4 @@ app.get('/api/images/:id/similar', async (req, res) => {
 });
 
 app.use(express.static(path.resolve(here, '../dist')));
-app.listen(port, () => console.log(`Still API listening on http://localhost:${port}`));
+app.listen(port, () => console.log(`Gallery API listening on http://localhost:${port}`));

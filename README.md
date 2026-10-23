@@ -1,6 +1,6 @@
-# Still
+# Gallery
 
-Still is a visual discovery app starter: a masonry image feed, cursor pagination, metadata filters, and an API path for pgvector-based similar-image search.
+Gallery is a visual discovery app starter: a masonry image feed, cursor pagination, metadata filters, and an API path for pgvector-based similar-image search.
 
 ## Run the front end and demo API
 
@@ -19,7 +19,7 @@ cp .env.example .env
 npm start
 ```
 
-The schema is in `db/init.sql`. To use the database API in development, run the API with `DATABASE_URL=postgres://still:still@localhost:5432/still` and Vite separately with `npm run dev:web`.
+The schema is in `db/init.sql`. To use the database API in development, run the API with `DATABASE_URL=postgres://gallery:gallery@localhost:5432/gallery` and Vite separately with `npm run dev:web`.
 
 The database path expects image rows with metadata and 512-dimensional embeddings. This starter does not yet include ingestion, image storage, or embedding generation. Similar-image search becomes active when rows have embeddings; the demo mode groups images by category to make the interaction explorable without a model or database.
 
