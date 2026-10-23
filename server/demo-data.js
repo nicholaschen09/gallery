@@ -1,0 +1,47 @@
+const photos = [
+  ['photo-1470252649378-9c29740c9fa8', 'First light', 'Nature', 'landscape'],
+  ['photo-1518837695005-2083093ee35b', 'Blue hour', 'Ocean', 'landscape'],
+  ['photo-1470770841072-f978cf4d019e', 'Quiet valley', 'Nature', 'landscape'],
+  ['photo-1500530855697-b586d89ba3ee', 'Open road', 'Travel', 'landscape'],
+  ['photo-1500534623283-312aade485b7', 'Desert bloom', 'Travel', 'portrait'],
+  ['photo-1472214103451-9374bd1c798e', 'Green room', 'Nature', 'landscape'],
+  ['photo-1519681393784-d120267933ba', 'After dark', 'Night', 'portrait'],
+  ['photo-1506744038136-46273834b3fb', 'Still water', 'Nature', 'landscape'],
+  ['photo-1518837695005-2083093ee35b', 'Salt air', 'Ocean', 'portrait'],
+  ['photo-1490730141103-6cac27aaab94', 'Soft morning', 'Nature', 'portrait'],
+  ['photo-1501785888041-af3ef285b470', 'Far shore', 'Travel', 'landscape'],
+  ['photo-1500534314209-a25ddb2bd429', 'Sand lines', 'Travel', 'portrait'],
+  ['photo-1475924156734-496f6cac6ec1', 'Last sun', 'Ocean', 'landscape'],
+  ['photo-1464822759023-fed622ff2c3b', 'High country', 'Nature', 'portrait'],
+  ['photo-1511497584788-876760111969', 'Forest walk', 'Nature', 'landscape'],
+  ['photo-1500534314209-a25ddb2bd429', 'Dune study', 'Travel', 'square'],
+  ['photo-1493246507139-91e8fad9978e', 'Hidden lake', 'Nature', 'landscape'],
+  ['photo-1507525428034-b723cf961d3e', 'Tide lines', 'Ocean', 'landscape'],
+  ['photo-1469474968028-56623f02e42e', 'Blue ridge', 'Nature', 'portrait'],
+  ['photo-1518837695005-2083093ee35b', 'Drift', 'Ocean', 'square'],
+  ['photo-1500534623283-312aade485b7', 'Wide horizon', 'Travel', 'landscape'],
+  ['photo-1470252649378-9c29740c9fa8', 'Daybreak', 'Nature', 'square'],
+  ['photo-1470770841072-f978cf4d019e', 'Still valley', 'Nature', 'portrait'],
+  ['photo-1506744038136-46273834b3fb', 'Reflections', 'Nature', 'square'],
+];
+
+export const demoImages = Array.from({ length: 240 }, (_, index) => {
+  const [photo, title, category, baseOrientation] = photos[index % photos.length];
+  const orientation = index % 7 === 0 ? 'portrait' : index % 11 === 0 ? 'square' : baseOrientation;
+  const width = orientation === 'portrait' ? 720 : orientation === 'square' ? 720 : 1080;
+  const height = orientation === 'portrait' ? 980 : orientation === 'square' ? 720 : 760;
+  const seed = index + 1;
+  const params = `auto=format&fit=crop&w=${width}&h=${height}&q=82&sat=${(seed % 7) - 2}`;
+  return {
+    id: `demo-${String(seed).padStart(4, '0')}`,
+    title: index < photos.length ? title : `${title} ${Math.ceil(seed / photos.length)}`,
+    category,
+    orientation,
+    width,
+    height,
+    imageUrl: `https://images.unsplash.com/${photo}?${params}`,
+    thumbUrl: `https://images.unsplash.com/${photo}?auto=format&fit=crop&w=48&h=64&q=20&blur=30`,
+    tags: [category.toLowerCase(), orientation],
+    createdAt: new Date(Date.UTC(2026, 9, 22, 18, 0, 0) - index * 3600000).toISOString(),
+  };
+});
