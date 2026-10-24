@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["server/**/*.ts", "src/types.ts"]
+  "include": ["server/**/*.ts", "shared/**/*.ts"]
 }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client';
 import type { FormEvent, ReactNode, SyntheticEvent } from 'react';
 import './style.css';
-import type { FeedResponse, ImageRecord, SimilarResponse } from './types';
+import type { FeedResponse, ImageRecord, SimilarResponse } from '../shared/types';
 
 const PAGE_SIZE = 36;
 type IconName = 'search' | 'grid' | 'arrow' | 'close' | 'spark';

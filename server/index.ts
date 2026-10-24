@@ -5,7 +5,7 @@ import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { demoImages } from './demo-data.js';
-import type { FeedResponse, GalleryMode, ImageRecord, SimilarResponse } from '../src/types.js';
+import type { FeedResponse, GalleryMode, ImageRecord, SimilarResponse } from '../shared/types.js';
 
 const { Pool } = pg;
 const app = express();

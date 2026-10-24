@@ -2,7 +2,7 @@
 
 Gallery is a visual discovery app starter: a masonry image feed, cursor pagination, metadata filters, and an API path for pgvector-based similar-image search.
 
-The browser app and API are written in TypeScript. Shared image and API response types live in `src/types.ts`.
+The browser app and API are written in TypeScript. Shared image and API response types live in `shared/types.ts`.
 
 ## Run the front end and demo API
 

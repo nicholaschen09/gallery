@@ -1,4 +1,4 @@
-import type { ImageOrientation, ImageRecord } from '../src/types.js';
+import type { ImageOrientation, ImageRecord } from '../shared/types.js';
 
 const photos: Array<[string, string, string, ImageOrientation]> = [
   ['photo-1470252649378-9c29740c9fa8', 'First light', 'Nature', 'landscape'],
