@@ -2,6 +2,8 @@
 
 Gallery is a visual discovery app starter: a masonry image feed, cursor pagination, metadata filters, and an API path for pgvector-based similar-image search.
 
+The browser app and API are written in TypeScript. Shared image and API response types live in `src/types.ts`.
+
 ## Run the front end and demo API
 
 ```sh
@@ -19,7 +21,9 @@ cp .env.example .env
 npm start
 ```
 
-The schema is in `db/init.sql`. To use the database API in development, run the API with `DATABASE_URL=postgres://gallery:gallery@localhost:5432/gallery` and Vite separately with `npm run dev:web`.
+The schema is in `db/init.sql`. To use the database API in development, set `DATABASE_URL=postgres://gallery:gallery@localhost:5432/gallery` and run `npm run dev`.
+
+For production, run `npm run build` before `npm start`. The build type-checks the browser app, builds the Vite assets, and compiles the API into `dist/server`.
 
 The database path expects image rows with metadata and 512-dimensional embeddings. This starter does not yet include ingestion, image storage, or embedding generation. Similar-image search becomes active when rows have embeddings; the demo mode groups images by category to make the interaction explorable without a model or database.
 

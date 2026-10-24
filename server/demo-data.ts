@@ -1,4 +1,6 @@
-const photos = [
+import type { ImageOrientation, ImageRecord } from '../src/types.js';
+
+const photos: Array<[string, string, string, ImageOrientation]> = [
   ['photo-1470252649378-9c29740c9fa8', 'First light', 'Nature', 'landscape'],
   ['photo-1518837695005-2083093ee35b', 'Blue hour', 'Ocean', 'landscape'],
   ['photo-1470770841072-f978cf4d019e', 'Quiet valley', 'Nature', 'landscape'],
@@ -25,9 +27,9 @@ const photos = [
   ['photo-1506744038136-46273834b3fb', 'Reflections', 'Nature', 'square'],
 ];
 
-export const demoImages = Array.from({ length: 240 }, (_, index) => {
-  const [photo, title, category, baseOrientation] = photos[index % photos.length];
-  const orientation = index % 7 === 0 ? 'portrait' : index % 11 === 0 ? 'square' : baseOrientation;
+export const demoImages: ImageRecord[] = Array.from({ length: 240 }, (_, index) => {
+  const [photo, title, category, baseOrientation] = photos[index % photos.length]!;
+  const orientation: ImageOrientation = index % 7 === 0 ? 'portrait' : index % 11 === 0 ? 'square' : baseOrientation;
   const width = orientation === 'portrait' ? 720 : orientation === 'square' ? 720 : 1080;
   const height = orientation === 'portrait' ? 980 : orientation === 'square' ? 720 : 760;
   const seed = index + 1;

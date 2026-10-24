@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import type { FormEvent, ReactNode, SyntheticEvent } from 'react';
 import './style.css';
+import type { FeedResponse, ImageRecord, SimilarResponse } from './types';
 
 const PAGE_SIZE = 36;
+type IconName = 'search' | 'grid' | 'arrow' | 'close' | 'spark';
 
-function Icon({ name, size = 18 }) {
-  const paths = {
+function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+  const paths: Record<IconName, ReactNode> = {
     search: <><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></>,
     grid: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     arrow: <><path d="M7 17 17 7M7 7h10v10"/></>,
@@ -15,7 +18,7 @@ function Icon({ name, size = 18 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 
-function useColumnCount() {
+function useColumnCount(): number {
   const [count, setCount] = useState(() => window.innerWidth < 620 ? 2 : window.innerWidth < 920 ? 3 : window.innerWidth < 1280 ? 4 : 5);
   useEffect(() => {
     const update = () => setCount(window.innerWidth < 620 ? 2 : window.innerWidth < 920 ? 3 : window.innerWidth < 1280 ? 4 : 5);
@@ -25,15 +28,30 @@ function useColumnCount() {
   return count;
 }
 
-function VirtualMasonry({ items, onSimilar, selectedId }) {
+interface VirtualMasonryProps {
+  items: ImageRecord[];
+  onSimilar: (item: ImageRecord) => void;
+  selectedId?: string;
+}
+
+interface PositionedCard {
+  item: ImageRecord;
+  col: number;
+  top: number;
+  height: number;
+  left: number;
+  width: number;
+}
+
+function VirtualMasonry({ items, onSimilar, selectedId }: VirtualMasonryProps) {
   const columns = useColumnCount();
   const [scrollTop, setScrollTop] = useState(window.scrollY);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
   const layout = useMemo(() => {
-    const heights = Array(columns).fill(0);
+    const heights = Array.from({ length: columns }, () => 0);
     const shellWidth = document.querySelector('.app-shell')?.clientWidth || window.innerWidth - 84;
     const colWidth = (shellWidth - (columns - 1) * 14) / columns;
-    return items.map((item) => {
+    return items.map((item): PositionedCard => {
       const col = heights.indexOf(Math.min(...heights));
       const ratio = item.height / item.width;
       const height = Math.max(150, Math.min(520, colWidth * ratio));
@@ -46,7 +64,7 @@ function VirtualMasonry({ items, onSimilar, selectedId }) {
   const visible = useMemo(() => layout.filter((card) => card.top + card.height >= scrollTop - viewportHeight * 1.2 && card.top <= scrollTop + viewportHeight * 2), [layout, scrollTop, viewportHeight]);
 
   useEffect(() => {
-    let frame;
+    let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => setScrollTop(window.scrollY));
@@ -61,7 +79,7 @@ function VirtualMasonry({ items, onSimilar, selectedId }) {
     <div className="masonry" style={{ height: totalHeight }}>
       {visible.map(({ item, col, top, left, width, height }) => <article className={`tile ${selectedId === item.id ? 'tile-selected' : ''}`} key={item.id} style={{ transform: `translate3d(${left}px, ${top}px, 0)`, width, height }}>
         <img src={item.thumbUrl} className="tile-blur" alt="" aria-hidden="true" />
-        <img src={item.imageUrl} className="tile-photo" alt={item.title} loading={top < scrollTop + viewportHeight ? 'eager' : 'lazy'} decoding="async" onLoad={(event) => { event.currentTarget.classList.add('loaded'); event.currentTarget.parentElement.classList.add('image-loaded'); }} />
+        <img src={item.imageUrl} className="tile-photo" alt={item.title} loading={top < scrollTop + viewportHeight ? 'eager' : 'lazy'} decoding="async" onLoad={(event: SyntheticEvent<HTMLImageElement>) => { event.currentTarget.classList.add('loaded'); event.currentTarget.parentElement?.classList.add('image-loaded'); }} />
         <div className="tile-shade" />
         <div className="tile-info"><span>{item.title}</span><button aria-label={`Find images like ${item.title}`} title="Find similar" onClick={() => onSimilar(item)}><Icon name="spark" size={16}/></button></div>
         <span className="tile-category">{item.category}</span>
@@ -71,21 +89,21 @@ function VirtualMasonry({ items, onSimilar, selectedId }) {
 }
 
 function App() {
-  const [category, setCategory] = useState('All');
-  const [orientation, setOrientation] = useState('Any');
-  const [items, setItems] = useState([]);
-  const [cursor, setCursor] = useState(null);
+  const category = 'All';
+  const orientation = 'Any';
+  const [items, setItems] = useState<ImageRecord[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState<ImageRecord | null>(null);
   const [searchText, setSearchText] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
-  const [error, setError] = useState('');
-  const sentinelRef = useRef(null);
+  const [error, setError] = useState<string>('');
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestRef = useRef(false);
-  const requestControllerRef = useRef(null);
+  const requestControllerRef = useRef<AbortController | null>(null);
 
-  const loadPage = useCallback(async ({ reset = false, selectedImage = null } = {}) => {
+  const loadPage = useCallback(async ({ reset = false, selectedImage = null }: { reset?: boolean; selectedImage?: ImageRecord | null } = {}) => {
     if ((requestRef.current && !reset && !selectedImage) || (!hasMore && !reset && !selectedImage)) return;
     if (requestRef.current) requestControllerRef.current?.abort();
     const controller = new AbortController();
@@ -105,15 +123,18 @@ function App() {
       }
       const url = selectedImage ? `/api/images/${selectedImage.id}/similar?${params}` : `/api/feed?${params}`;
       const response = await fetch(url, { signal: controller.signal });
-      const payload = await response.json();
+      const payload = await response.json() as (FeedResponse | SimilarResponse) & { error?: string };
       if (!response.ok) throw new Error(payload.error || 'Could not load images');
       if (controller.signal.aborted) return;
       const nextItems = payload.items || [];
       setItems((current) => reset || selectedImage ? nextItems : [...current, ...nextItems]);
-      setCursor(payload.nextCursor || null);
-      setHasMore(selectedImage ? false : Boolean(payload.nextCursor));
+      const nextCursor = 'nextCursor' in payload ? payload.nextCursor : null;
+      setCursor(nextCursor || null);
+      setHasMore(selectedImage ? false : Boolean(nextCursor));
     } catch (err) {
-      if (err.name !== 'AbortError') setError(err.message);
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        setError(err instanceof Error ? err.message : 'Could not load images');
+      }
     } finally {
       if (requestControllerRef.current === controller) {
         requestRef.current = false;
@@ -131,13 +152,13 @@ function App() {
     return () => observer.disconnect();
   }, [loadPage]);
 
-  const findSimilar = (item) => {
+  const findSimilar = (item: ImageRecord) => {
     setSelected(item);
     setCursor(null);
     setHasMore(false);
     loadPage({ reset: true, selectedImage: item });
   };
-  const submitSearch = (event) => {
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextQuery = searchText.trim();
     setSelected(null);
@@ -149,7 +170,7 @@ function App() {
   return <main className="app-shell">
     <form className="search-bar" onSubmit={submitSearch} role="search">
       <Icon name="search" size={18}/>
-      <input aria-label="Search assets by name" type="text" placeholder="Search assets by name" value={searchText} onChange={(event) => setSearchText(event.target.value)} />
+      <input aria-label="Search assets by name" type="text" placeholder="Search assets by name" value={searchText} onChange={(event) => setSearchText(event.currentTarget.value)} />
       {searchText && <button className="search-clear" type="button" aria-label="Clear search" onClick={() => { setSearchText(''); setSelected(null); setCursor(null); setHasMore(true); if (!activeQuery) loadPage({ reset: true }); else setActiveQuery(''); }}><Icon name="close" size={15}/></button>}
     </form>
     <VirtualMasonry items={items} onSimilar={findSimilar} selectedId={selected?.id}/>
@@ -157,4 +178,7 @@ function App() {
   </main>;
 }
 
-createRoot(document.getElementById('root')).render(<App/>);
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Missing #root mount element');
+
+createRoot(rootElement).render(<App/>);
