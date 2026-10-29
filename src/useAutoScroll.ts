@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 
-const PIXELS_PER_SECOND = 240;
-
-export function useAutoScroll(hasMore: boolean) {
+export function useAutoScroll(hasMore: boolean, pixelsPerSecond: number, scroller: RefObject<HTMLDivElement | null>) {
   const [active, setActive] = useState(false);
   const hasMoreRef = useRef(hasMore);
-  hasMoreRef.current = hasMore;
+  const speedRef = useRef(pixelsPerSecond);
+  useLayoutEffect(() => {
+    hasMoreRef.current = hasMore;
+    speedRef.current = pixelsPerSecond;
+  }, [hasMore, pixelsPerSecond]);
 
   useEffect(() => {
     if (!active) return;
@@ -13,25 +16,42 @@ export function useAutoScroll(hasMore: boolean) {
     let frame = 0;
     let timer = 0;
     let last = performance.now();
-    const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    const reachedEnd = () => window.scrollY >= maxScroll() - 1 && !hasMoreRef.current;
+    let carry = 0;
+    const node = () => scroller.current;
+    const maxScroll = () => {
+      const el = node();
+      return el ? Math.max(0, el.scrollHeight - el.clientHeight) : 0;
+    };
+    const reachedEnd = () => {
+      const el = node();
+      return el !== null && el.scrollTop >= maxScroll() - 1 && !hasMoreRef.current;
+    };
     if (reduceMotion) {
       const page = () => {
-        if (reachedEnd()) { setActive(false); return; }
+        const el = node();
+        if (!el || reachedEnd()) { setActive(false); return; }
         const max = maxScroll();
-        if (window.scrollY >= max - 1) return;
-        window.scrollTo(0, Math.min(max, window.scrollY + window.innerHeight * 0.8));
+        if (el.scrollTop < max - 1) el.scrollTo(0, Math.min(max, el.scrollTop + el.clientHeight * 0.8));
+        const interval = Math.max(400, Math.round((1400 * 240) / Math.max(speedRef.current, 1)));
+        timer = window.setTimeout(page, interval);
       };
       page();
-      timer = window.setInterval(page, 1400);
     } else {
       const step = (now: number) => {
-        if (reachedEnd()) { setActive(false); return; }
+        const el = node();
+        if (!el || reachedEnd()) { setActive(false); return; }
         const max = maxScroll();
-        if (window.scrollY < max - 1) {
-          const dt = Math.min(now - last, 48);
+        if (el.scrollTop < max - 1) {
+          const dt = Math.min(now - last, 32);
           last = now;
-          window.scrollTo(0, Math.min(max, window.scrollY + (PIXELS_PER_SECOND * dt) / 1000));
+          carry += (speedRef.current * dt) / 1000;
+          const whole = Math.floor(carry);
+          if (whole > 0) {
+            const next = Math.min(max, el.scrollTop + whole);
+            carry -= next - el.scrollTop;
+            if (next >= max) carry = 0;
+            el.scrollTo(0, next);
+          }
         }
         frame = requestAnimationFrame(step);
       };
@@ -39,7 +59,7 @@ export function useAutoScroll(hasMore: boolean) {
     }
     const stop = () => setActive(false);
     const stopFromTouch = (event: TouchEvent) => {
-      if (event.target instanceof Element && event.target.closest('.auto-scroll')) return;
+      if (event.target instanceof Element && event.target.closest('.scroll-controls')) return;
       stop();
     };
     const stopFromKey = (event: KeyboardEvent) => {
@@ -51,12 +71,12 @@ export function useAutoScroll(hasMore: boolean) {
     window.addEventListener('keydown', stopFromKey);
     return () => {
       cancelAnimationFrame(frame);
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
       window.removeEventListener('wheel', stop);
       window.removeEventListener('touchstart', stopFromTouch);
       window.removeEventListener('keydown', stopFromKey);
     };
-  }, [active]);
+  }, [active, scroller]);
 
   return { active, setActive };
 }

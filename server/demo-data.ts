@@ -915,7 +915,9 @@ const photos: Array<[string, string, string, ImageOrientation]> = [
   ['photo-1506744038136-46273834b3fb', 'Reflections', 'Nature', 'square'],
 ];
 
-export const demoImages: ImageRecord[] = Array.from({ length: 240 }, (_, index) => {
+const DEMO_REPEATS = 40 * 10;
+
+export const demoImages: ImageRecord[] = Array.from({ length: 240 * DEMO_REPEATS }, (_, index) => {
   const [photo, title, category, baseOrientation] = photos[index % photos.length]!;
   const orientation: ImageOrientation = index % 7 === 0 ? 'portrait' : index % 11 === 0 ? 'square' : baseOrientation;
   const width = orientation === 'portrait' ? 720 : orientation === 'square' ? 720 : 1080;

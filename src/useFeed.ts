@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, RefObject } from 'react';
 import type { FeedResponse, ImageRecord, SimilarResponse } from '../shared/types';
 import { PAGE_SIZE } from './gallery';
 
@@ -8,10 +8,11 @@ interface LoadOptions {
   selectedImage?: ImageRecord | null;
 }
 
-export function useFeed() {
+export function useFeed(scroller: RefObject<HTMLDivElement | null>, prefetchPx = 900) {
   const category = 'All';
   const orientation = 'Any';
   const [items, setItems] = useState<ImageRecord[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -32,7 +33,9 @@ export function useFeed() {
     setBusy(true);
     setError('');
     try {
-      const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
+      const firstPage = reset || !cursor;
+      const limit = prefetchPx > 2000 ? 80 : PAGE_SIZE;
+      const params = new URLSearchParams({ limit: String(limit) });
       if (selectedImage) {
         if (category !== 'All') params.set('category', category);
       } else {
@@ -48,6 +51,7 @@ export function useFeed() {
       if (controller.signal.aborted) return;
       const nextItems = payload.items || [];
       setItems((current) => reset || selectedImage ? nextItems : [...current, ...nextItems]);
+      if (firstPage && 'total' in payload && typeof payload.total === 'number') setTotal(payload.total);
       const nextCursor = 'nextCursor' in payload ? payload.nextCursor : null;
       setCursor(nextCursor || null);
       setHasMore(selectedImage ? false : Boolean(nextCursor));
@@ -61,16 +65,19 @@ export function useFeed() {
         setBusy(false);
       }
     }
-  }, [category, orientation, activeQuery, cursor, hasMore]);
+  }, [category, orientation, activeQuery, cursor, hasMore, prefetchPx]);
 
   useEffect(() => { setCursor(null); setHasMore(true); setSelected(null); loadPage({ reset: true }); }, [category, orientation, activeQuery]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const target = sentinelRef.current;
     if (!target) return;
-    const observer = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting) loadPage(); }, { rootMargin: '900px' });
+    const root = scroller.current;
+    if (!root) return;
+    const margin = Math.max(900, Math.round(prefetchPx));
+    const observer = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting) loadPage(); }, { root, rootMargin: `${margin}px` });
     observer.observe(target);
     return () => observer.disconnect();
-  }, [loadPage]);
+  }, [loadPage, scroller, prefetchPx]);
 
   const findSimilar = (item: ImageRecord) => {
     setSelected(item);
@@ -98,5 +105,5 @@ export function useFeed() {
     else setActiveQuery('');
   };
 
-  return { items, busy, error, hasMore, selected, searchText, setSearchText, sentinelRef, loadPage, findSimilar, submitSearch, clearSearch };
+  return { items, total, busy, error, hasMore, selected, searchText, setSearchText, sentinelRef, loadPage, findSimilar, submitSearch, clearSearch };
 }

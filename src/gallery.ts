@@ -19,9 +19,24 @@ export const LAYOUTS = [
   { id: '8', label: '8×', columns: 8 },
 ] as const;
 
+/** Left end of the slider. Slow enough to actually watch a tile go by. */
+export const SCROLL_SPEED_MIN = 80;
+/**
+ * Right end of the slider. At 60fps this is several pane-heights per frame,
+ * fast enough that the pictures smear instead of reading as individual tiles.
+ */
+export const SCROLL_SPEED_MAX = 240_000;
+/** Maps to about 240px/s, the pace auto-scroll used before the slider. */
+export const DEFAULT_SCROLL_PERCENT = 14;
+
 export type ResolutionId = (typeof RESOLUTION_FILTERS)[number]['id'];
 export type ResolutionFilter = (typeof RESOLUTION_FILTERS)[number];
 export type LayoutId = (typeof LAYOUTS)[number]['id'];
+
+export function scrollSpeedFromPercent(percent: number): number {
+  const t = Math.min(1, Math.max(0, percent / 100));
+  return Math.round(SCROLL_SPEED_MIN * (SCROLL_SPEED_MAX / SCROLL_SPEED_MIN) ** t);
+}
 
 function resizeImageUrl(url: string, width: number, height: number): string {
   try {

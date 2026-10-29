@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import type { SyntheticEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { RefObject, SyntheticEvent } from 'react';
 import type { ImageRecord } from '../shared/types';
 import { COLUMN_GAP, TILE_RATIO } from './gallery';
 import { Icon } from './icons';
@@ -13,27 +13,39 @@ interface PositionedCard {
   width: number;
 }
 
-function useContentWidth(): number {
+function useScrollerMetrics(scroller: RefObject<HTMLDivElement | null>) {
   const [width, setWidth] = useState(() => Math.min(window.innerWidth, 1600) - (window.innerWidth < 700 ? 36 : 84));
-  useLayoutEffect(() => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node) return;
+    let frame = 0;
     const read = () => {
-      const shell = document.querySelector('.app-shell');
-      if (!shell) return;
-      const style = getComputedStyle(shell);
-      const next = shell.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      if (next > 0) setWidth(next);
+      const nextWidth = node.clientWidth;
+      if (nextWidth > 0) setWidth(nextWidth);
+      setViewportHeight(node.clientHeight);
+      setScrollTop(node.scrollTop);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setScrollTop(node.scrollTop));
     };
     read();
-    window.addEventListener('resize', read);
-    return () => window.removeEventListener('resize', read);
-  }, []);
-  return width;
+    const observer = new ResizeObserver(read);
+    observer.observe(node);
+    node.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      node.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [scroller]);
+  return { width, scrollTop, viewportHeight };
 }
 
-export function VirtualMasonry({ items, onSimilar, selectedId, columns }: { items: ImageRecord[]; onSimilar: (item: ImageRecord) => void; selectedId?: string; columns: number }) {
-  const contentWidth = useContentWidth();
-  const [scrollTop, setScrollTop] = useState(window.scrollY);
-  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+export function VirtualMasonry({ items, onSimilar, selectedId, columns, scroller, scrollPixelsPerSecond = 0 }: { items: ImageRecord[]; onSimilar: (item: ImageRecord) => void; selectedId?: string; columns: number; scroller: RefObject<HTMLDivElement | null>; scrollPixelsPerSecond?: number }) {
+  const { width: contentWidth, scrollTop, viewportHeight } = useScrollerMetrics(scroller);
   const layout = useMemo(() => {
     const heights = Array.from({ length: columns }, () => 0);
     const colWidth = (contentWidth - (columns - 1) * COLUMN_GAP) / columns;
@@ -46,19 +58,12 @@ export function VirtualMasonry({ items, onSimilar, selectedId, columns }: { item
     });
   }, [items, columns, contentWidth]);
   const totalHeight = useMemo(() => layout.reduce((max, card) => Math.max(max, card.top + card.height), 0), [layout]);
-  const visible = useMemo(() => layout.filter((card) => card.top + card.height >= scrollTop - viewportHeight * 1.2 && card.top <= scrollTop + viewportHeight * 2), [layout, scrollTop, viewportHeight]);
-
-  useEffect(() => {
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setScrollTop(window.scrollY));
-    };
-    const onResize = () => setViewportHeight(window.innerHeight);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); cancelAnimationFrame(frame); };
-  }, []);
+  const visible = useMemo(() => {
+    const lead = scrollPixelsPerSecond / 60;
+    const ahead = Math.min(8000, Math.max(viewportHeight * 2, lead * 3));
+    const behind = Math.min(2400, Math.max(viewportHeight * 1.2, lead));
+    return layout.filter((card) => card.top + card.height >= scrollTop - behind && card.top <= scrollTop + ahead);
+  }, [layout, scrollTop, viewportHeight, scrollPixelsPerSecond]);
 
   return <div className="scroll-area">
     <div className="masonry" style={{ height: totalHeight }}>
