@@ -5,11 +5,11 @@ export const COLUMN_GAP = 14;
 export const TILE_RATIO = 9 / 16;
 
 export const RESOLUTION_FILTERS = [
-  { id: 'extreme-low', label: 'Extreme low', width: 256, height: 144 },
+  { id: 'extreme-low', label: '256×144', width: 256, height: 144 },
   { id: '720p', label: '720p', width: 1280, height: 720 },
   { id: '1080p', label: '1080p', width: 1920, height: 1080 },
   { id: '4k', label: '4K', width: 3840, height: 2160 },
-  { id: 'extreme-high', label: 'Extreme high', width: 7680, height: 4320 },
+  { id: 'extreme-high', label: '7680×4320', width: 7680, height: 4320 },
 ] as const;
 
 export const LAYOUTS = [
