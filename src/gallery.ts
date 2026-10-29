@@ -22,10 +22,10 @@ export const LAYOUTS = [
 /** Left end of the slider. Slow enough to actually watch a tile go by. */
 export const SCROLL_SPEED_MIN = 80;
 /**
- * Right end of the slider. At 60fps this is several pane-heights per frame,
- * fast enough that the pictures smear instead of reading as individual tiles.
+ * Right end of the slider. Still several panes a frame, just short of the
+ * previous max so the blur is a little easier to follow.
  */
-export const SCROLL_SPEED_MAX = 240_000;
+export const SCROLL_SPEED_MAX = 180_000;
 /** Maps to about 240px/s, the pace auto-scroll used before the slider. */
 export const DEFAULT_SCROLL_PERCENT = 14;
 

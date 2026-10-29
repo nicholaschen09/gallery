@@ -21,6 +21,13 @@ export function App() {
 
   useEffect(() => { scrollRef.current?.scrollTo(0, 0); }, [resolutionId, layoutId]);
 
+  const backToTop = () => {
+    setAutoScroll(false);
+    const node = scrollRef.current;
+    node?.scrollTo(0, 0);
+    requestAnimationFrame(() => node?.scrollTo(0, 0));
+  };
+
   return <main className="app-shell">
     <header className="gallery-header">
     <div className="toolbar">
@@ -31,6 +38,7 @@ export function App() {
       </form>
       <div className="scroll-controls">
         <button type="button" className={`auto-scroll ${autoScroll ? 'filter-active' : ''}`} aria-pressed={autoScroll} onClick={() => setAutoScroll((current) => !current)}>{autoScroll ? <><Icon name="pause" size={14}/>Pause</> : <><Icon name="play" size={14}/>Auto scroll</>}</button>
+        <button type="button" className="auto-scroll" aria-label="Back to top" onClick={backToTop}><Icon name="up" size={14}/>Back to top</button>
         <label className="speed-slider">
           <span className="resolution-label">Speed</span>
           <input type="range" min={0} max={100} step={1} value={speedPercent} aria-label="Scroll speed" title={`${pixelsPerSecond} pixels per second`} style={{ '--speed': `${speedPercent}%` } as CSSProperties} onChange={(event) => setSpeedPercent(Number(event.currentTarget.value))} />
