@@ -915,7 +915,7 @@ const photos: Array<[string, string, string, ImageOrientation]> = [
   ['photo-1506744038136-46273834b3fb', 'Reflections', 'Nature', 'square'],
 ];
 
-const DEMO_REPEATS = 40 * 10;
+const DEMO_REPEATS = 40 * 10 * 8;
 
 export const demoImages: ImageRecord[] = Array.from({ length: 240 * DEMO_REPEATS }, (_, index) => {
   const [photo, title, category, baseOrientation] = photos[index % photos.length]!;

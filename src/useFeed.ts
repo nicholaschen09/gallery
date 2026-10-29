@@ -8,7 +8,7 @@ interface LoadOptions {
   selectedImage?: ImageRecord | null;
 }
 
-export function useFeed(scroller: RefObject<HTMLDivElement | null>, prefetchPx = 900) {
+export function useFeed(scroller: RefObject<HTMLDivElement | null>, prefetchPx = 900, pageSize = PAGE_SIZE) {
   const category = 'All';
   const orientation = 'Any';
   const [items, setItems] = useState<ImageRecord[]>([]);
@@ -34,7 +34,7 @@ export function useFeed(scroller: RefObject<HTMLDivElement | null>, prefetchPx =
     setError('');
     try {
       const firstPage = reset || !cursor;
-      const limit = prefetchPx > 2000 ? 80 : PAGE_SIZE;
+      const limit = prefetchPx > 2000 ? Math.max(80, pageSize) : pageSize;
       const params = new URLSearchParams({ limit: String(limit) });
       if (selectedImage) {
         if (category !== 'All') params.set('category', category);
@@ -65,7 +65,7 @@ export function useFeed(scroller: RefObject<HTMLDivElement | null>, prefetchPx =
         setBusy(false);
       }
     }
-  }, [category, orientation, activeQuery, cursor, hasMore, prefetchPx]);
+  }, [category, orientation, activeQuery, cursor, hasMore, prefetchPx, pageSize]);
 
   useEffect(() => { setCursor(null); setHasMore(true); setSelected(null); loadPage({ reset: true }); }, [category, orientation, activeQuery]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {

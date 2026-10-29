@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { applyResolution, DEFAULT_SCROLL_PERCENT, LAYOUTS, RESOLUTION_FILTERS, scrollSpeedFromPercent } from './gallery';
+import { applyResolution, DEFAULT_SCROLL_PERCENT, LAYOUTS, PAGE_SIZE, RESOLUTION_FILTERS, scrollSpeedFromPercent } from './gallery';
 import type { LayoutId, ResolutionId } from './gallery';
 import { Icon } from './icons';
 import { useAutoScroll } from './useAutoScroll';
@@ -10,13 +10,14 @@ import { VirtualMasonry } from './VirtualMasonry';
 export function App() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [speedPercent, setSpeedPercent] = useState(DEFAULT_SCROLL_PERCENT);
+  const [layoutId, setLayoutId] = useState<LayoutId>('4');
   const pixelsPerSecond = scrollSpeedFromPercent(speedPercent);
-  const { items, total, busy, error, hasMore, selected, searchText, setSearchText, sentinelRef, loadPage, findSimilar, submitSearch, clearSearch } = useFeed(scrollRef, pixelsPerSecond * 0.35);
+  const layout = LAYOUTS.find((item) => item.id === layoutId) ?? LAYOUTS[1];
+  const pageSize = layout.columns >= 8 ? 80 : PAGE_SIZE;
+  const { items, total, busy, error, hasMore, selected, searchText, setSearchText, sentinelRef, loadPage, findSimilar, submitSearch, clearSearch } = useFeed(scrollRef, pixelsPerSecond * 0.35, pageSize);
   const { active: autoScroll, setActive: setAutoScroll } = useAutoScroll(hasMore, pixelsPerSecond, scrollRef);
   const [resolutionId, setResolutionId] = useState<ResolutionId | null>(null);
-  const [layoutId, setLayoutId] = useState<LayoutId>('4');
   const resolution = RESOLUTION_FILTERS.find((filter) => filter.id === resolutionId) ?? null;
-  const layout = LAYOUTS.find((item) => item.id === layoutId) ?? LAYOUTS[1];
   const visibleItems = useMemo(() => resolution ? items.map((item) => applyResolution(item, resolution)) : items, [items, resolution]);
 
   useEffect(() => { scrollRef.current?.scrollTo(0, 0); }, [resolutionId, layoutId]);

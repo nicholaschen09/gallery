@@ -111,6 +111,16 @@ async function getFeed({ cursor, category, orientation, query, limit }: FeedPara
     return { items, nextCursor: hasMore ? encodeCursor(items.at(-1)!) : null, total: null, mode: 'postgres' };
   }
 
+  const browsingAll = (!category || category === 'All') && (!orientation || orientation === 'Any') && !query;
+  if (browsingAll) {
+    const start = decoded ? Number(decoded.id.replace(/^demo-/, '')) : 0;
+    if (!Number.isInteger(start) || start < 0) throw new Error('Invalid cursor');
+    const page = demoImages.slice(start, start + limit + 1);
+    const hasMore = page.length > limit;
+    const items = page.slice(0, limit);
+    return { items, nextCursor: hasMore ? encodeCursor(items.at(-1)!) : null, total: demoImages.length, mode: 'demo' };
+  }
+
   let rows = demoImages;
   if (category && category !== 'All') rows = rows.filter((item) => item.category === category);
   if (orientation && orientation !== 'Any') rows = rows.filter((item) => item.orientation === orientation.toLowerCase());
